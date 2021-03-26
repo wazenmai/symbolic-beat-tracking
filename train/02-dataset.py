@@ -9,6 +9,7 @@ data_list = np.sort(glob.glob('./dataset/npz_train/*.npz')).tolist()
 X_data, Yb_data, Yd_data, Yt_data = [], [], [], []
 
 for idx in range(len(data_list)):
+    print(data_list[idx])
     with open(data_list[idx], 'rb') as f:
         data = pickle.load(f)
         X_data.append(data[0])

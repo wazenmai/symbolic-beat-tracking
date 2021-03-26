@@ -5,6 +5,7 @@ import pandas as pd
 import pickle 
 
 sz = 1200
+# np.set_printoptions(threshold=np.inf)
 
 def main():
 
@@ -23,10 +24,14 @@ def main():
     for i in range(21, 109):
         PF.append(str(i) + '/dura')
 
-    file_list = np.sort(glob.glob('./input/*.csv', recursive=False)).tolist()
+    # file_list = np.sort(glob.glob('./input/*.csv', recursive=False)).tolist()
+    file_list = np.sort(glob.glob('/home/wazenmai/NAS_189/home/datasets/MusicNet/beat_tracking_dataset/dataset/training_dataset/*.csv', recursive=True)).tolist()
 
     for file_idx in range(len(file_list)):
+        """
+        print(file_idx)
         data = pd.read_csv(file_list[file_idx])
+        print(data.head(5))
         name = file_list[file_idx].split('/')[2]
         z = pd.DataFrame(np.zeros((int(data['end_time'].max() / 44100) * 100, 1)))
         new = pd.DataFrame()
@@ -62,19 +67,27 @@ def main():
 
         # write to file 
         new.to_csv('./input/raw/' + str(name))
+        print(new.head(5))
+        """
 
-        X = pd.read_csv('./input/raw/' + str(name))
+        # X = pd.read_csv('./input/raw/' + str(name))
+        print(file_list[file_idx])
+        name = file_list[file_idx].split('/')[-1]
+        X = pd.read_csv(file_list[file_idx])
         Yb, Yd = pd.DataFrame(X, columns=['beat']).to_numpy(), pd.DataFrame(X, columns=['downbeat']).to_numpy()
-        X = X.drop(['beat', 'downbeat', 'Unnamed: 0'], axis=1).to_numpy()   
+        X = X.drop(['beat', 'downbeat', 'Unnamed: 0', 'IOI'], axis=1).to_numpy()    # delete beat and downbeat info from x
 
+    
         # calculate spectral flux (with onset feature)
+        """
         X_sf = np.zeros((len(X), 88))
         for i in range(len(X)):
             if i != len(X) - 1:
                 X_sf[i] = np.maximum(X[i+1][:88] - X[i][:88], 0)
         X_sf = np.sum(X_sf, axis=1)
         X_sf = X_sf[:, np.newaxis]
-        X = np.concatenate((X, X_sf), axis=1)       # concat 
+        X = np.concatenate((X, X_sf), axis=1)       # concat
+        """
 
         # tranform into frame-level data 
         N = int(len(X) / sz)
@@ -85,7 +98,8 @@ def main():
             need_pad = sz - len(pad)
 
         # prepare X_frames 
-        X_tot = np.concatenate([X, np.zeros((need_pad, 178))])
+        # X_tot = np.concatenate([X, np.zeros((need_pad, 178))])
+        X_tot = np.concatenate([X, np.zeros((need_pad, 176))]) # delete IOI and spectral flux
         M = len(X_tot) / sz
         X_frames = []
         for idx in range(int(M)):
@@ -103,6 +117,7 @@ def main():
         # write to npz file
         name = name.split('.')[0] + '.npz'
         with open('./input/npz/' + str(name), 'wb') as f:
+            print(str(name))
             pickle.dump([X_frames, Yb_frames, Yd_frames], f)
 
 

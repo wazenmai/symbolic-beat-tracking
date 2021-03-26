@@ -8,8 +8,10 @@ import torch.optim as optim
 import torch.nn.functional as func
 from torch.utils.data import Dataset, DataLoader
 
+np.set_printoptions(threshold=np.inf)
 torch.manual_seed(1)
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+# device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = 'cpu'
 
 sz = 600
 seq_len, batch_sz = sz * 2, 8
@@ -66,8 +68,8 @@ def main():
     file_list = np.sort(glob.glob('./input/npz/*.npz', recursive=True)).tolist() 
     model = Model(input_dim, hidden_dim, beat_dim, downbeat_dim)
     model = model.to(device)
-    checkpoint = torch.load('./models/BLSTM.pkl')
-    model.load_state_dict(checkpoint['model_state_dict'])
+    # checkpoint = torch.load('./models/BLSTM.pkl')
+    # model.load_state_dict(checkpoint['model_state_dict'])
 
     s = './output/tmp/blstm/'
     
@@ -82,7 +84,17 @@ def main():
         # prepare dataset and loader 
         with open(file_list[file_idx], 'rb') as f:                      
             data = pickle.load(f)
+        
         X_data, Yb_data, Yd_data = data[0], data[1], data[2]
+        print("X_data")
+        print(len(X_data))
+        print(X_data)
+        print("Yb_data")
+        print(len(Yb_data))
+        print(Yb_data)
+        print("Yd_data")
+        print(len(Yd_data))
+        print(Yd_data)
         dataset = custom_dataset(X_data, Yb_data, Yd_data)
         loader = DataLoader(dataset, batch_size=batch_sz, drop_last=False)
 

@@ -2,19 +2,21 @@ import numpy as np
 import pandas as pd 
 from scipy.interpolate import interp1d
 import glob 
+import os
 
-file_list = np.sort(glob.glob('./MusicNet/*.csv', recursive=True)).tolist()
+# file_list = np.sort(glob.glob('./MusicNet/*.csv', recursive=True)).tolist()
+file_list = np.sort(glob.glob('../input/01.csv', recursive=True)).tolist()
 
 directory = './dataset/training_dataset/'
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+if not os.path.exists(directory):
+    os.makedirs(directory)
 
 directory = './dataset/npz_train/'
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+if not os.path.exists(directory):
+    os.makedirs(directory)
 
 N = []   
-for i in range(21, 109):
+for i in range(21, 109):         # pitch number
     N.append(str(i) + '/onset')
 for i in range(21, 109):
     N.append(str(i) + '/dura')
@@ -22,6 +24,7 @@ for i in range(21, 109):
 for file_idx in range(len(file_list)):
 
     data = pd.read_csv(file_list[file_idx])
+    print(data.head(5))
     name = file_list[file_idx].split('/')[2]
 
     z = np.zeros((int(data['end_time'].max() / 44100) * 100, 1))
@@ -31,7 +34,7 @@ for file_idx in range(len(file_list)):
         new[N[i]] = z[0]             
     new['IOI'], new['beat'], new['downbeat'] = z[0], z[0], z[0]   
 
-    m = int(data['meter'][0].split('/')[0])                # meter 
+    # m = int(data['meter'][0].split('/')[0])                # meter  TODO: no meter in csv file??
     B = int(data['start_beat'].max())                      # to generate reference list 
     ref_list = np.arange(B + 1)   
 
@@ -46,7 +49,7 @@ for file_idx in range(len(file_list)):
         if ref_list[i] not in y_list and ref_list[i] >= data['start_beat'].min():
             lost_list.append(ref_list[i])
 
-    # interpolation
+    # interpolation (labels?)
     f = interp1d(y_list, x_list, kind='linear', fill_value='extrapolate')
     insert_beat = []
     for i in range(len(lost_list)):
@@ -86,6 +89,7 @@ for file_idx in range(len(file_list)):
     onset_list = onset_arr.tolist()
 
     # IOI 
+    """
     for i in range(len(onset_list)):
         if i == 0:
             num = 0.0
@@ -93,6 +97,7 @@ for file_idx in range(len(file_list)):
         else:
             num = np.round(float(onset_list[i] - onset_list[i-1]) * 0.01, 2)
             new['IOI'][onset_list[i]] = num
+    """
 
     for i in range(len(insert_beat)):
         new['beat'][insert_beat[i][0]] = insert_beat[i][1]
@@ -114,6 +119,7 @@ for file_idx in range(len(file_list)):
     z = pd.DataFrame(z)
 
     # spectral flux 
+    """
     X_sf = np.zeros((len(X), 88))
     for i in range(len(X)):
         if i != len(X) - 1:
@@ -122,6 +128,7 @@ for file_idx in range(len(file_list)):
     X_sf = np.sum(X_sf, axis=1)
     X_sf = X_sf[:, np.newaxis]
     X = np.concatenate((X, X_sf), axis=1)       # concat 
+    """
 
     num_frag = int(len(X) / sz)
     if num_frag * sz + sz > len(X):
